@@ -51,6 +51,27 @@ Después de guardar `.env`, levanta nuevamente el servidor local:
 php -S 127.0.0.1:8081 -t public
 ```
 
+## Panel administrativo
+
+El panel está disponible en:
+
+```text
+http://127.0.0.1:8081/admin/
+```
+
+En el primer acceso, si la tabla `users` no tiene usuarios activos, el sistema mostrará un formulario para crear el primer administrador. La contraseña se guarda cifrada con `password_hash()` y el inicio de sesión se valida con `password_verify()`.
+
+Desde el panel puedes administrar:
+
+| Sección | Función |
+|---|---|
+| Dashboard | Ver conteos de notas, publicadas, borradores, categorías y banners. |
+| Notas | Crear, editar, publicar, archivar o eliminar notas. |
+| Categorías | Crear, ordenar, activar o desactivar categorías. |
+| Banners | Crear banners de imagen, HTML o AdSense para ubicaciones del sitio público. |
+
+Las ubicaciones de banners usadas por el front público son `top_728x90`, `sidebar_top_300x250` y `sidebar_bottom_300x250`.
+
 ## Estado actual
 
-Base inicial conectada a MySQL mediante PDO. El Home, las categorías, las notas, los listados populares/virales y los espacios de banners ya están preparados para leer datos desde la base `fepa_veterinaria`. Las siguientes etapas completarán panel administrativo, SEO dinámico avanzado y monetización.
+Base conectada a MySQL mediante PDO. El Home, las categorías, las notas, los listados populares/virales, los espacios de banners y el panel administrativo ya están preparados para leer y administrar datos desde la base `fepa_veterinaria`. Las siguientes etapas podrán completar SEO dinámico avanzado, carga física de imágenes y monetización.
