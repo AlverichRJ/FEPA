@@ -1,84 +1,123 @@
 <?php
-$app = require __DIR__ . '/../config/app.php';
+
+require_once __DIR__ . '/../app/bootstrap.php';
+
+use App\Models\Banner;
+use App\Models\Category;
+use App\Models\Post;
+
+$app = require BASE_PATH . '/config/app.php';
 date_default_timezone_set($app['timezone']);
 
-$articles = [
-    [
-        'title' => 'Chequeos preventivos: clave para una vida larga',
-        'slug' => 'chequeos-preventivos-clave-vida-larga',
-        'category' => 'Salud Animal',
-        'date' => '18 de mayo de 2025',
-        'image' => 'https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?auto=format&fit=crop&w=900&q=80',
-        'excerpt' => 'La prevención es la mejor herramienta para detectar a tiempo cualquier problema de salud.',
-        'tags' => ['Prevención', 'Salud'],
-    ],
-    [
-        'title' => 'Cómo manejar el estrés en gatos',
-        'slug' => 'como-manejar-estres-gatos',
-        'category' => 'Consejos',
-        'date' => '17 de mayo de 2025',
-        'image' => 'https://images.unsplash.com/photo-1571566882372-1598d88abd90?auto=format&fit=crop&w=900&q=80',
-        'excerpt' => 'Técnicas efectivas para reducir el estrés y mejorar la convivencia con tu felino.',
-        'tags' => ['Gatos', 'Comportamiento'],
-    ],
-    [
-        'title' => 'Ejercicio diario: cuánto y cómo hacerlo bien',
-        'slug' => 'ejercicio-diario-mascotas',
-        'category' => 'Ejercicio',
-        'date' => '16 de mayo de 2025',
-        'image' => 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=900&q=80',
-        'excerpt' => 'Cantidad de ejercicio recomendada según edad, raza y tamaño de tu perro.',
-        'tags' => ['Perros', 'Bienestar'],
-    ],
-    [
-        'title' => 'Problemas urinarios en gatos: causas y cuidados',
-        'slug' => 'problemas-urinarios-gatos',
-        'category' => 'Enfermedades',
-        'date' => '15 de mayo de 2025',
-        'image' => 'https://images.unsplash.com/photo-1592194996308-7b43878e84a6?auto=format&fit=crop&w=900&q=80',
-        'excerpt' => 'Síntomas, causas comunes y cuándo acudir al veterinario.',
-        'tags' => ['Gatos', 'Salud'],
-    ],
-    [
-        'title' => 'Alimentación adecuada para conejos',
-        'slug' => 'alimentacion-adecuada-conejos',
-        'category' => 'Nutrición',
-        'date' => '14 de mayo de 2025',
-        'image' => 'https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?auto=format&fit=crop&w=900&q=80',
-        'excerpt' => 'Una dieta balanceada es esencial para la salud digestiva y dental.',
-        'tags' => ['Conejos', 'Nutrición'],
-    ],
-    [
-        'title' => 'Vacunas y prevención: protege su futuro',
-        'slug' => 'vacunas-prevencion-mascotas',
-        'category' => 'Vacunas',
-        'date' => '13 de mayo de 2025',
-        'image' => 'https://images.unsplash.com/photo-1581888227599-779811939961?auto=format&fit=crop&w=900&q=80',
-        'excerpt' => 'Conoce el calendario de vacunas esencial para cachorros y adultos.',
-        'tags' => ['Cachorros', 'Prevención'],
-    ],
-];
-
-$popular = array_slice($articles, 0, 3);
-$viral = array_slice(array_reverse($articles), 0, 3);
 $route = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
+$route = $route === '' ? 'inicio' : $route;
 $isArticle = str_starts_with($route, 'nota/');
-$slug = $isArticle ? basename($route) : null;
-$current = $articles[0];
-foreach ($articles as $article) {
-    if ($article['slug'] === $slug) {
-        $current = $article;
-        break;
+$isCategory = str_starts_with($route, 'categoria/');
+$slug = ($isArticle || $isCategory) ? basename($route) : null;
+$page = max(1, (int) ($_GET['page'] ?? 1));
+$perPage = 6;
+$offset = ($page - 1) * $perPage;
+
+$categories = [];
+$articles = [];
+$popular = [];
+$viral = [];
+$featured = null;
+$current = null;
+$currentCategory = null;
+$related = [];
+$topBanner = null;
+$sidebarTopBanner = null;
+$sidebarBottomBanner = null;
+$databaseError = null;
+
+try {
+    $categories = Category::active();
+    $popular = Post::popular(3);
+    $viral = Post::viral(3);
+    $topBanner = Banner::activeByPlacement('top_728x90');
+    $sidebarTopBanner = Banner::activeByPlacement('sidebar_top_300x250');
+    $sidebarBottomBanner = Banner::activeByPlacement('sidebar_bottom_300x250');
+
+    if ($isArticle && $slug) {
+        $current = Post::findBySlug($slug);
+
+        if ($current) {
+            Post::incrementViews($current['id']);
+            $related = Post::related($current['id'], $current['category_id'], 3);
+        } else {
+            http_response_code(404);
+        }
+    } elseif ($isCategory && $slug) {
+        $currentCategory = Category::findBySlug($slug);
+
+        if ($currentCategory) {
+            $articles = Post::byCategory((int) $currentCategory['id'], $perPage, $offset);
+            $featured = $articles[0] ?? null;
+        } else {
+            http_response_code(404);
+        }
+    } else {
+        $featured = Post::featured();
+        $articles = Post::latest($perPage, $offset);
     }
+} catch (Throwable $exception) {
+    http_response_code(500);
+    $databaseError = $exception->getMessage();
+    error_log($exception->getMessage());
 }
 
-function e($value) { return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); }
-function asset($path) { return '/assets/' . ltrim($path, '/'); }
-function articleUrl($slug) { return '/nota/' . rawurlencode($slug); }
+function renderBanner(?array $banner, string $fallback): string
+{
+    if (!$banner) {
+        return '<span>' . $fallback . '</span>';
+    }
 
-$pageTitle = $isArticle ? $current['title'] . ' | FEPA Veterinaria' : $app['seo']['default_title'];
-$pageDescription = $isArticle ? $current['excerpt'] : $app['seo']['default_description'];
-$pageImage = $isArticle ? $current['image'] : $app['seo']['default_og_image'];
+    if ($banner['type'] === 'html' || $banner['type'] === 'adsense') {
+        return (string) $banner['html_code'];
+    }
+
+    if ($banner['type'] === 'image' && !empty($banner['image_path'])) {
+        $image = e($banner['image_path']);
+        $name = e($banner['name']);
+        $target = !empty($banner['target_url']) ? e($banner['target_url']) : '';
+        $imageTag = '<img src="' . $image . '" alt="' . $name . '" loading="lazy">';
+
+        return $target !== '' ? '<a href="' . $target . '" target="_blank" rel="noopener">' . $imageTag . '</a>' : $imageTag;
+    }
+
+    return '<span>' . e($fallback) . '</span>';
+}
+
+function renderArticleContent(string $content): string
+{
+    $trimmed = trim($content);
+
+    if ($trimmed === '') {
+        return '';
+    }
+
+    if ($trimmed !== strip_tags($trimmed)) {
+        return $trimmed;
+    }
+
+    return '<p>' . nl2br(e($trimmed)) . '</p>';
+}
+
+$pageTitle = $app['seo']['default_title'];
+$pageDescription = $app['seo']['default_description'];
+$pageImage = $app['seo']['default_og_image'];
+
+if ($isArticle && $current) {
+    $pageTitle = $current['title'] . ' | FEPA Veterinaria';
+    $pageDescription = $current['excerpt'];
+    $pageImage = $current['image'];
+} elseif ($isCategory && $currentCategory) {
+    $pageTitle = $currentCategory['name'] . ' | FEPA Veterinaria';
+    $pageDescription = $currentCategory['description'] ?: 'Notas de ' . $currentCategory['name'] . ' en FEPA Veterinaria.';
+}
+
+$canonicalUrl = rtrim($app['base_url'] ?: '', '/') . ($_SERVER['REQUEST_URI'] ?? '/');
 ?>
 <!doctype html>
 <html lang="es">
@@ -87,17 +126,17 @@ $pageImage = $isArticle ? $current['image'] : $app['seo']['default_og_image'];
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e($pageTitle) ?></title>
     <meta name="description" content="<?= e($pageDescription) ?>">
-    <link rel="canonical" href="<?= e(($app['base_url'] ?: '') . $_SERVER['REQUEST_URI']) ?>">
+    <link rel="canonical" href="<?= e($canonicalUrl) ?>">
     <meta property="og:type" content="<?= $isArticle ? 'article' : 'website' ?>">
     <meta property="og:title" content="<?= e($pageTitle) ?>">
     <meta property="og:description" content="<?= e($pageDescription) ?>">
     <meta property="og:image" content="<?= e($pageImage) ?>">
-    <meta property="og:url" content="<?= e(($app['base_url'] ?: '') . $_SERVER['REQUEST_URI']) ?>">
+    <meta property="og:url" content="<?= e($canonicalUrl) ?>">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="stylesheet" href="<?= asset('css/styles.css') ?>">
 </head>
 <body>
-    <div class="top-ad"><span>PUBLICIDAD 728 x 90</span></div>
+    <div class="top-ad"><?= renderBanner($topBanner, 'PUBLICIDAD 728 x 90') ?></div>
     <header class="site-header">
         <div class="container nav-shell">
             <a class="brand" href="/" aria-label="Inicio FEPA Veterinaria">
@@ -105,56 +144,75 @@ $pageImage = $isArticle ? $current['image'] : $app['seo']['default_og_image'];
                 <span><strong><?= e($app['app_name']) ?></strong><small><?= e($app['tagline']) ?></small></span>
             </a>
             <nav class="main-nav" aria-label="Menú principal">
-                <a class="active" href="/">Inicio</a>
-                <a href="/categoria/salud-animal">Salud Animal</a>
-                <a href="/categoria/consejos">Consejos</a>
-                <a href="/categoria/adopcion">Adopción</a>
-                <a href="/categoria/nutricion">Nutrición</a>
-                <a href="/categoria/urgencias">Urgencias</a>
+                <a class="<?= $route === 'inicio' ? 'active' : '' ?>" href="/">Inicio</a>
+                <?php foreach ($categories as $category): ?>
+                    <a class="<?= $isCategory && $slug === $category['slug'] ? 'active' : '' ?>" href="<?= categoryUrl($category['slug']) ?>"><?= e($category['name']) ?></a>
+                <?php endforeach; ?>
             </nav>
             <button class="search-button" aria-label="Buscar">⌕</button>
         </div>
     </header>
 
-    <?php if ($isArticle): ?>
+    <?php if ($databaseError): ?>
+        <main class="container home-layout">
+            <section class="empty-state">
+                <h1>No fue posible conectar con la base de datos</h1>
+                <p>Verifica que MySQL esté activo y que el archivo <strong>.env</strong> local tenga las credenciales correctas de <strong>fepa_veterinaria</strong>.</p>
+            </section>
+        </main>
+    <?php elseif ($isArticle): ?>
         <main class="container article-layout">
-            <article class="article-page">
-                <div class="breadcrumb">Inicio / <?= e($current['category']) ?> / <?= e($current['title']) ?></div>
-                <span class="category-pill"><?= e($current['category']) ?></span>
-                <h1><?= e($current['title']) ?></h1>
-                <p class="lead"><?= e($current['excerpt']) ?></p>
-                <div class="article-meta">
-                    <span>Por Dra. Laura Méndez</span><span><?= e($current['date']) ?></span><span>6 min de lectura</span>
-                </div>
-                <div class="share-row"><a href="#">Facebook</a><a href="#">Twitter</a><a href="#">Compartir</a></div>
-                <img class="article-cover" src="<?= e($current['image']) ?>" alt="<?= e($current['title']) ?>" loading="lazy">
-                <p>El bienestar de nuestras mascotas depende de pequeños hábitos diarios y decisiones informadas. En FEPA Veterinaria compartimos recomendaciones prácticas para mantener a perros, gatos y otras mascotas sanas, activas y felices.</p>
-                <h2>Revisión preventiva</h2>
-                <p>Las revisiones veterinarias periódicas permiten detectar a tiempo cambios en peso, piel, dientes, digestión o comportamiento. Una consulta preventiva puede evitar complicaciones y mejorar la calidad de vida de cada mascota.</p>
-                <blockquote>La prevención es la mejor herramienta para garantizar una vida larga y saludable.</blockquote>
-                <h2>Alimentación y rutina</h2>
-                <p>Una alimentación balanceada, agua fresca, descanso suficiente y actividad física adecuada ayudan a fortalecer el sistema inmunológico. Cada especie, edad y condición requiere una rutina específica.</p>
-                <div class="inline-ad">PUBLICIDAD</div>
-                <h2>Señales de alerta</h2>
-                <p>Presta atención a cambios en el apetito, energía, respiración, movilidad, sueño o comportamiento. Ante cualquier duda, consulta con un veterinario de confianza antes de automedicar.</p>
-                <div class="tag-list"><?php foreach ($current['tags'] as $tag): ?><span><?= e($tag) ?></span><?php endforeach; ?></div>
-                <section class="related-section"><h2>Artículos relacionados</h2><div class="related-grid"><?php foreach (array_slice($articles, 1, 3) as $article): ?><a class="related-card" href="<?= articleUrl($article['slug']) ?>"><img src="<?= e($article['image']) ?>" alt="" loading="lazy"><strong><?= e($article['title']) ?></strong></a><?php endforeach; ?></div></section>
-            </article>
-            <?php include __DIR__ . '/partials/sidebar.php'; ?>
+            <?php if (!$current): ?>
+                <section class="empty-state"><h1>Nota no encontrada</h1><p>La nota solicitada no existe o todavía no está publicada.</p></section>
+            <?php else: ?>
+                <article class="article-page">
+                    <div class="breadcrumb">Inicio / <?= e($current['category']) ?> / <?= e($current['title']) ?></div>
+                    <span class="category-pill"><?= e($current['category']) ?></span>
+                    <h1><?= e($current['title']) ?></h1>
+                    <p class="lead"><?= e($current['excerpt']) ?></p>
+                    <div class="article-meta">
+                        <span>Por <?= e($current['author']) ?></span><span><?= e($current['date']) ?></span><span><?= e($current['reading_time']) ?> min de lectura</span>
+                    </div>
+                    <div class="share-row"><a href="#">Facebook</a><a href="#">Twitter</a><a href="#">Compartir</a></div>
+                    <img class="article-cover" src="<?= e($current['image']) ?>" alt="<?= e($current['title']) ?>" loading="lazy">
+                    <?= renderArticleContent($current['content']) ?>
+                    <div class="inline-ad">PUBLICIDAD</div>
+                    <?php if (!empty($current['tags'])): ?><div class="tag-list"><?php foreach ($current['tags'] as $tag): ?><span><?= e($tag) ?></span><?php endforeach; ?></div><?php endif; ?>
+                    <?php if ($related): ?><section class="related-section"><h2>Artículos relacionados</h2><div class="related-grid"><?php foreach ($related as $article): ?><a class="related-card" href="<?= articleUrl($article['slug']) ?>"><img src="<?= e($article['image']) ?>" alt="" loading="lazy"><strong><?= e($article['title']) ?></strong></a><?php endforeach; ?></div></section><?php endif; ?>
+                </article>
+                <?php include __DIR__ . '/partials/sidebar.php'; ?>
+            <?php endif; ?>
         </main>
     <?php else: ?>
         <main class="container home-layout">
-            <section class="hero-grid">
-                <a class="hero-card" href="<?= articleUrl($articles[0]['slug']) ?>">
-                    <img src="<?= e($articles[0]['image']) ?>" alt="<?= e($articles[0]['title']) ?>">
-                    <div class="hero-overlay"><span class="category-pill">Nota destacada</span><h1>Cuidados esenciales para tu mascota esta semana</h1><p>Consejos prácticos y recomendaciones de nuestros veterinarios para mantener a perros y gatos sanos, felices y protegidos.</p><button>Leer nota completa →</button></div>
-                </a>
-                <div class="hero-side"><?php foreach (array_slice($articles, 1, 3) as $article): ?><a class="mini-card" href="<?= articleUrl($article['slug']) ?>"><img src="<?= e($article['image']) ?>" alt=""><span><?= e($article['category']) ?></span><strong><?= e($article['title']) ?></strong><small><?= e($article['date']) ?></small></a><?php endforeach; ?></div>
-            </section>
-            <div class="content-with-sidebar">
-                <section class="recent-section"><h2>Artículos recientes</h2><div class="article-grid"><?php foreach ($articles as $article): ?><a class="article-card" href="<?= articleUrl($article['slug']) ?>"><img src="<?= e($article['image']) ?>" alt="<?= e($article['title']) ?>" loading="lazy"><span class="category-pill"><?= e($article['category']) ?></span><h3><?= e($article['title']) ?></h3><small><?= e($article['date']) ?></small><p><?= e($article['excerpt']) ?></p><div class="tag-list"><?php foreach ($article['tags'] as $tag): ?><span><?= e($tag) ?></span><?php endforeach; ?></div></a><?php endforeach; ?></div></section>
-                <?php include __DIR__ . '/partials/sidebar.php'; ?>
-            </div>
+            <?php if ($isCategory && !$currentCategory): ?>
+                <section class="empty-state"><h1>Categoría no encontrada</h1><p>La categoría solicitada no existe o no está activa.</p></section>
+            <?php else: ?>
+                <?php if ($isCategory && $currentCategory): ?>
+                    <section class="section-heading"><h1><?= e($currentCategory['name']) ?></h1><p><?= e($currentCategory['description']) ?></p></section>
+                <?php endif; ?>
+
+                <?php if ($featured): ?>
+                    <section class="hero-grid">
+                        <a class="hero-card" href="<?= articleUrl($featured['slug']) ?>">
+                            <img src="<?= e($featured['image']) ?>" alt="<?= e($featured['title']) ?>">
+                            <div class="hero-overlay"><span class="category-pill">Nota destacada</span><h1><?= e($featured['title']) ?></h1><p><?= e($featured['excerpt']) ?></p><button>Leer nota completa →</button></div>
+                        </a>
+                        <div class="hero-side"><?php foreach (array_slice($articles, 0, 3) as $article): ?><a class="mini-card" href="<?= articleUrl($article['slug']) ?>"><img src="<?= e($article['image']) ?>" alt=""><span><?= e($article['category']) ?></span><strong><?= e($article['title']) ?></strong><small><?= e($article['date']) ?></small></a><?php endforeach; ?></div>
+                    </section>
+                <?php endif; ?>
+
+                <div class="content-with-sidebar">
+                    <section class="recent-section"><h2><?= $isCategory ? 'Notas de la categoría' : 'Artículos recientes' ?></h2>
+                        <?php if (!$articles): ?>
+                            <div class="empty-state"><h3>Todavía no hay notas publicadas</h3><p>Cuando se publiquen notas desde el panel administrativo aparecerán automáticamente en esta sección.</p></div>
+                        <?php else: ?>
+                            <div class="article-grid"><?php foreach ($articles as $article): ?><a class="article-card" href="<?= articleUrl($article['slug']) ?>"><img src="<?= e($article['image']) ?>" alt="<?= e($article['title']) ?>" loading="lazy"><span class="category-pill"><?= e($article['category']) ?></span><h3><?= e($article['title']) ?></h3><small><?= e($article['date']) ?></small><p><?= e($article['excerpt']) ?></p><?php if (!empty($article['tags'])): ?><div class="tag-list"><?php foreach ($article['tags'] as $tag): ?><span><?= e($tag) ?></span><?php endforeach; ?></div><?php endif; ?></a><?php endforeach; ?></div>
+                        <?php endif; ?>
+                    </section>
+                    <?php include __DIR__ . '/partials/sidebar.php'; ?>
+                </div>
+            <?php endif; ?>
         </main>
     <?php endif; ?>
 

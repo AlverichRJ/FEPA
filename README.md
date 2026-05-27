@@ -26,6 +26,31 @@ Crear un portal profesional de notas veterinarias con diseño editorial, SEO ava
 - Apache con `.htaccess` habilitado.
 - SSL activado desde GoDaddy/cPanel.
 
+## Configuración local de base de datos
+
+Para conectar el sitio con MySQL en desarrollo local, copia el archivo de ejemplo y ajusta la contraseña real de tu instalación local. El archivo `.env` está ignorado por Git y no debe subirse al repositorio.
+
+```powershell
+copy .env.example .env
+notepad .env
+```
+
+Ejemplo de valores locales:
+
+```env
+DB_HOST=localhost
+DB_DATABASE=fepa_veterinaria
+DB_USERNAME=root
+DB_PASSWORD=TU_CONTRASEÑA_LOCAL
+APP_URL=http://127.0.0.1:8081
+```
+
+Después de guardar `.env`, levanta nuevamente el servidor local:
+
+```powershell
+php -S 127.0.0.1:8081 -t public
+```
+
 ## Estado actual
 
-Base inicial creada con Home y página interna de nota usando datos de demostración. Las siguientes etapas completarán panel administrativo, base de datos, SEO dinámico y monetización.
+Base inicial conectada a MySQL mediante PDO. El Home, las categorías, las notas, los listados populares/virales y los espacios de banners ya están preparados para leer datos desde la base `fepa_veterinaria`. Las siguientes etapas completarán panel administrativo, SEO dinámico avanzado y monetización.
