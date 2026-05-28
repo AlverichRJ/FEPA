@@ -169,6 +169,7 @@ function renderAdminHead(string $title, array $app): void
         <link rel="stylesheet" href="/assets/css/styles.css">
         <style>
             :root{--fepa-primary:#0E2F38;--fepa-primary-2:#123f4a;--fepa-primary-3:#1f5b63;--fepa-gold:#E4B34F;--fepa-gold-dark:#c99732;--fepa-bg:#f6f4ee;--fepa-card:#ffffff;--fepa-line:#e7ded0;--fepa-text:#102a33;--fepa-muted:#63737a;--fepa-success:#247346;--fepa-danger:#b64132;--fepa-shadow:0 18px 48px rgba(14,47,56,.10);--fepa-radius:20px}body.admin-body{margin:0;min-height:100vh;background:radial-gradient(circle at top left,rgba(228,179,79,.14),transparent 34%),linear-gradient(180deg,#fbfaf7,var(--fepa-bg));color:var(--fepa-text)}.admin-auth{min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 12% 18%,rgba(228,179,79,.32),transparent 30%),linear-gradient(135deg,var(--fepa-primary),var(--fepa-primary-2) 58%,#08242b)}.admin-card{width:min(500px,calc(100% - 32px));background:linear-gradient(180deg,#fff,#fffaf0);border:1px solid rgba(228,179,79,.32);border-top:5px solid var(--fepa-gold);border-radius:26px;padding:36px;box-shadow:0 28px 80px rgba(0,0,0,.26)}.admin-card h1{margin:20px 0 8px;color:var(--fepa-primary);letter-spacing:-.02em}.admin-card p{color:var(--fepa-muted);line-height:1.55}.admin-form label{display:block;font-weight:900;margin-top:16px;color:var(--fepa-primary)}.admin-form input,.admin-form textarea,.admin-form select{width:100%;padding:13px 14px;border:1px solid var(--fepa-line);border-radius:13px;margin-top:7px;font:inherit;background:#fff;color:var(--fepa-text);box-shadow:inset 0 1px 0 rgba(14,47,56,.03)}.admin-form input:focus,.admin-form textarea:focus,.admin-form select:focus{outline:3px solid rgba(228,179,79,.22);border-color:var(--fepa-gold)}.admin-form textarea{min-height:190px;resize:vertical}.admin-form button,.admin-button{border:0;background:linear-gradient(135deg,var(--fepa-gold),var(--fepa-gold-dark));color:#fff;font-weight:900;border-radius:999px;padding:12px 18px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;box-shadow:0 10px 24px rgba(201,151,50,.24);transition:transform .16s ease,box-shadow .16s ease,background .16s ease}.admin-form button:hover,.admin-button:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(201,151,50,.32)}.admin-form button{margin-top:18px}.admin-button.secondary{background:linear-gradient(135deg,var(--fepa-primary),var(--fepa-primary-3));box-shadow:0 10px 24px rgba(14,47,56,.18)}.admin-button.danger{background:linear-gradient(135deg,var(--fepa-danger),#8f2f25);box-shadow:0 10px 24px rgba(182,65,50,.18)}.admin-shell{display:grid;grid-template-columns:280px 1fr;min-height:100vh}.admin-sidebar{background:linear-gradient(180deg,var(--fepa-primary),#09272f);color:#fff;padding:26px 22px;position:sticky;top:0;height:100vh;border-right:5px solid var(--fepa-gold);box-shadow:8px 0 34px rgba(14,47,56,.14)}.admin-sidebar .brand{color:#fff;margin-bottom:30px;padding:10px;border-radius:18px;background:rgba(255,255,255,.06)}.admin-sidebar .brand small{color:#d6e6e9}.admin-nav{display:grid;gap:10px}.admin-nav a{padding:13px 15px;border-radius:14px;color:#dbe7ea;font-weight:900;border:1px solid transparent}.admin-nav a.active,.admin-nav a:hover{background:rgba(228,179,79,.18);border-color:rgba(228,179,79,.32);color:#fff}.admin-main{padding:30px;min-width:0}.admin-topbar{display:flex;justify-content:space-between;gap:18px;align-items:center;margin-bottom:26px;background:linear-gradient(135deg,#fff,#fff8e8);border:1px solid var(--fepa-line);border-radius:var(--fepa-radius);padding:20px 22px;box-shadow:var(--fepa-shadow)}.admin-topbar h1{margin:0;color:var(--fepa-primary);letter-spacing:-.03em}.admin-topbar p{margin:.35rem 0 0;color:var(--fepa-muted);font-weight:700}.admin-grid{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:16px;margin-bottom:26px}.stat-card,.admin-panel{background:var(--fepa-card);border:1px solid var(--fepa-line);border-radius:var(--fepa-radius);box-shadow:var(--fepa-shadow);padding:21px}.stat-card{position:relative;overflow:hidden}.stat-card:before{content:"";position:absolute;inset:0 auto 0 0;width:6px;background:linear-gradient(180deg,var(--fepa-gold),var(--fepa-primary-3))}.stat-card strong{display:block;font-size:32px;color:var(--fepa-primary);letter-spacing:-.04em}.stat-card span{color:var(--fepa-muted);font-weight:900}.admin-panel h2{margin-top:0;color:var(--fepa-primary)}.admin-table{width:100%;border-collapse:collapse;background:#fff;border-radius:18px;overflow:hidden;box-shadow:var(--fepa-shadow);border:1px solid var(--fepa-line)}.admin-table th,.admin-table td{text-align:left;padding:14px;border-bottom:1px solid #efe8dd;vertical-align:top}.admin-table th{background:linear-gradient(135deg,var(--fepa-primary),var(--fepa-primary-2));color:#fff;font-size:13px;text-transform:uppercase;letter-spacing:.04em}.admin-table tr:hover td{background:#fffaf0}.admin-actions{display:flex;gap:8px;flex-wrap:wrap}.admin-actions form{display:inline}.badge{display:inline-flex;border-radius:999px;padding:5px 11px;font-weight:900;font-size:12px;background:#f0eadf;color:var(--fepa-primary);border:1px solid #e5dac9}.badge.ok{background:#e8f5ee;color:var(--fepa-success);border-color:#cbe8d6}.badge.warn{background:#fff5db;color:#9b6a00;border-color:#f0ddb0}.admin-alert{padding:14px 16px;border-radius:15px;margin-bottom:16px;font-weight:900;border:1px solid transparent}.admin-alert.notice{background:#e8f5ee;color:var(--fepa-success);border-color:#cbe8d6}.admin-alert.error{background:#fdeceb;color:#9c2f23;border-color:#f3cbc5}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.form-full{grid-column:1/-1}.checkbox-row{display:flex;align-items:center;gap:10px;margin-top:18px;font-weight:900;color:var(--fepa-primary)}.checkbox-row input{width:auto;margin:0;accent-color:var(--fepa-gold)}.admin-help{background:#fff7e5;border:1px solid #efdcae;border-left:5px solid var(--fepa-gold);padding:13px;border-radius:12px;color:#6d5120;line-height:1.5}.responsive-table{overflow:auto}@media(max-width:900px){.admin-shell{grid-template-columns:1fr}.admin-sidebar{position:static;height:auto;border-right:0;border-bottom:5px solid var(--fepa-gold)}.admin-grid{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}.admin-topbar{align-items:flex-start;flex-direction:column}}@media(max-width:560px){.admin-grid{grid-template-columns:1fr}.admin-main{padding:18px}.admin-card{padding:24px}}
+            .editor-page{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;align-items:start}.editor-main{display:grid;gap:16px}.editor-title{width:100%;border:0;border-bottom:2px solid var(--fepa-line);background:#fff;padding:18px 4px 14px;font-size:38px;line-height:1.12;font-weight:900;color:var(--fepa-primary);letter-spacing:-.04em}.editor-title:focus{outline:0;border-color:var(--fepa-gold)}.editor-subtitle{width:100%;border:0;border-bottom:1px solid var(--fepa-line);background:#fff;padding:12px 4px;font-size:18px;color:var(--fepa-muted)}.editor-subtitle:focus{outline:0;border-color:var(--fepa-gold)}.editor-hero-card,.editor-sidebar-card{background:#fff;border:1px solid var(--fepa-line);border-radius:var(--fepa-radius);box-shadow:var(--fepa-shadow);padding:20px}.editor-action-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.editor-elementor{background:linear-gradient(135deg,#1677c8,#0b5ea6);box-shadow:0 10px 22px rgba(11,94,166,.22)}.media-dropzone{border:2px dashed #dbc99e;border-radius:16px;background:#fffaf0;padding:18px;color:#6d5120}.media-dropzone strong{display:block;color:var(--fepa-primary);margin-bottom:5px}.editor-toolbar{border:1px solid var(--fepa-line);border-radius:18px 18px 0 0;background:linear-gradient(180deg,#fff,#fff8e8);padding:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}.editor-toolbar select,.editor-toolbar button,.editor-tabs button{border:1px solid #e5dac9;background:#fff;color:var(--fepa-primary);border-radius:10px;padding:8px 10px;font-weight:900;cursor:pointer}.editor-toolbar button:hover,.editor-tabs button:hover{border-color:var(--fepa-gold);background:#fff7e5}.editor-toolbar .toolbar-separator{width:1px;height:28px;background:#e5dac9}.editor-tabs{display:flex;justify-content:flex-end;gap:8px;padding:10px 0}.editor-tabs button.active{background:var(--fepa-primary);color:#fff;border-color:var(--fepa-primary)}.visual-editor{min-height:520px;border:1px solid var(--fepa-line);border-top:0;border-radius:0 0 18px 18px;background:#fff;padding:24px;font-size:18px;line-height:1.7;color:var(--fepa-text);overflow:auto}.visual-editor:focus{outline:3px solid rgba(228,179,79,.18)}.visual-editor:empty:before{content:attr(data-placeholder);color:#9aa6aa}.code-editor{min-height:520px;border-radius:0 0 18px 18px;font-family:Consolas,Monaco,monospace;font-size:15px}.editor-sidebar{display:grid;gap:16px;position:sticky;top:24px}.editor-sidebar-card{padding:0;overflow:hidden}.editor-sidebar-card summary{list-style:none;padding:16px 18px;font-weight:900;color:var(--fepa-primary);cursor:pointer;background:linear-gradient(135deg,#fff,#fff8e8);border-bottom:1px solid var(--fepa-line)}.editor-sidebar-card summary::-webkit-details-marker{display:none}.editor-sidebar-card .panel-body{padding:17px 18px;display:grid;gap:13px}.publish-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.publish-actions .admin-button{justify-content:center}.publish-actions .publish-primary{grid-column:1/-1}.category-checklist{max-height:210px;overflow:auto;border:1px solid var(--fepa-line);border-radius:13px;padding:10px;background:#fff}.category-checklist label{display:flex;align-items:center;gap:9px;margin:0;padding:8px;border-radius:10px}.category-checklist label:hover{background:#fff7e5}.tag-input-row{display:flex;gap:8px}.tag-input-row input{min-width:0}.featured-preview{border:1px dashed #dbc99e;border-radius:15px;background:#fffaf0;padding:12px;text-align:center;color:#6d5120}.featured-preview img{max-width:100%;border-radius:12px;display:block;margin:0 auto 10px}.format-options{display:grid;gap:8px}.format-options label{display:flex;gap:9px;align-items:center;margin:0;color:var(--fepa-text)}.editor-note{font-size:13px;color:var(--fepa-muted);line-height:1.45}.is-hidden{display:none!important}@media(max-width:1100px){.editor-page{grid-template-columns:1fr}.editor-sidebar{position:static}.editor-title{font-size:32px}}@media(max-width:640px){.editor-title{font-size:28px}.publish-actions{grid-template-columns:1fr}.editor-toolbar{overflow:auto;flex-wrap:nowrap}.visual-editor,.code-editor{min-height:380px}}
         </style>
     </head>
     <body class="admin-body">
@@ -234,7 +235,173 @@ function renderShellStart(string $section, array $user, ?string $notice, ?string
 
 function renderShellEnd(): void
 {
-    echo '</main></div></body></html>';
+    ?>
+        </main>
+    </div>
+    <script>
+        (function () {
+            const form = document.querySelector('.post-editor-form');
+            if (!form) {
+                return;
+            }
+
+            const visualEditor = document.getElementById('visualEditor');
+            const codeEditor = document.getElementById('postContent');
+            const modeButtons = document.querySelectorAll('[data-editor-mode]');
+            const statusInput = document.getElementById('postStatus');
+            const statusSelect = document.querySelector('[data-status-select]');
+            const featuredInput = document.querySelector('input[name="featured_image"]');
+            const featuredPreview = document.querySelector('[data-featured-preview]');
+            const mediaButton = document.querySelector('[data-media-focus]');
+            const mediaPicker = document.getElementById('mediaPicker');
+            const mediaDropzone = document.getElementById('mediaDropzone');
+            let currentMode = 'visual';
+
+            function syncToVisual() {
+                if (visualEditor && codeEditor) {
+                    visualEditor.innerHTML = codeEditor.value || '';
+                }
+            }
+
+            function syncToCode() {
+                if (visualEditor && codeEditor && currentMode === 'visual') {
+                    codeEditor.value = visualEditor.innerHTML.trim();
+                }
+            }
+
+            function switchMode(mode) {
+                if (!visualEditor || !codeEditor) {
+                    return;
+                }
+                if (mode === 'code') {
+                    syncToCode();
+                    visualEditor.classList.add('is-hidden');
+                    codeEditor.classList.remove('is-hidden');
+                } else {
+                    syncToVisual();
+                    codeEditor.classList.add('is-hidden');
+                    visualEditor.classList.remove('is-hidden');
+                }
+                currentMode = mode;
+                modeButtons.forEach((button) => button.classList.toggle('active', button.dataset.editorMode === mode));
+            }
+
+            function runCommand(command, value) {
+                if (currentMode !== 'visual') {
+                    switchMode('visual');
+                }
+                visualEditor.focus();
+                document.execCommand(command, false, value || null);
+                syncToCode();
+            }
+
+            function updateFeaturedPreview() {
+                if (!featuredInput || !featuredPreview) {
+                    return;
+                }
+                const url = featuredInput.value.trim();
+                featuredPreview.innerHTML = url ? '<img src="' + url.replace(/"/g, '&quot;') + '" alt="Vista previa"><span>Portada principal configurada</span>' : '<span>Sin imagen destacada</span>';
+            }
+
+            syncToVisual();
+
+            modeButtons.forEach((button) => {
+                button.addEventListener('click', () => switchMode(button.dataset.editorMode));
+            });
+
+            document.querySelectorAll('[data-command]').forEach((button) => {
+                button.addEventListener('click', () => runCommand(button.dataset.command, button.dataset.value || null));
+            });
+
+            const blockSelect = document.querySelector('[data-editor-block]');
+            if (blockSelect) {
+                blockSelect.addEventListener('change', () => runCommand('formatBlock', blockSelect.value));
+            }
+
+            const fontSelect = document.querySelector('[data-editor-font]');
+            if (fontSelect) {
+                fontSelect.addEventListener('change', () => runCommand('fontName', fontSelect.value));
+            }
+
+            const sizeSelect = document.querySelector('[data-editor-size]');
+            if (sizeSelect) {
+                sizeSelect.addEventListener('change', () => runCommand('fontSize', sizeSelect.value));
+            }
+
+            const colorInput = document.querySelector('[data-editor-color]');
+            if (colorInput) {
+                colorInput.addEventListener('input', () => runCommand('foreColor', colorInput.value));
+            }
+
+            const bgInput = document.querySelector('[data-editor-bg]');
+            if (bgInput) {
+                bgInput.addEventListener('input', () => runCommand('hiliteColor', bgInput.value));
+            }
+
+            const linkButton = document.querySelector('[data-link]');
+            if (linkButton) {
+                linkButton.addEventListener('click', () => {
+                    const url = window.prompt('Pega la URL del enlace');
+                    if (url) {
+                        runCommand('createLink', url);
+                    }
+                });
+            }
+
+            document.querySelectorAll('[data-save-status]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    if (statusInput) {
+                        statusInput.value = button.dataset.saveStatus;
+                    }
+                    if (statusSelect) {
+                        statusSelect.value = button.dataset.saveStatus;
+                    }
+                    syncToCode();
+                });
+            });
+
+            if (statusSelect && statusInput) {
+                statusSelect.addEventListener('change', () => {
+                    statusInput.value = statusSelect.value;
+                });
+            }
+
+            if (visualEditor) {
+                visualEditor.addEventListener('input', syncToCode);
+                visualEditor.addEventListener('blur', syncToCode);
+            }
+
+            if (codeEditor) {
+                codeEditor.addEventListener('input', () => {
+                    if (currentMode === 'code') {
+                        syncToVisual();
+                        switchMode('code');
+                    }
+                });
+            }
+
+            if (featuredInput) {
+                featuredInput.addEventListener('input', updateFeaturedPreview);
+            }
+
+            if (mediaButton && mediaPicker) {
+                mediaButton.addEventListener('click', () => mediaPicker.click());
+            }
+
+            if (mediaPicker && mediaDropzone) {
+                mediaPicker.addEventListener('change', () => {
+                    const count = mediaPicker.files ? mediaPicker.files.length : 0;
+                    if (count) {
+                        mediaDropzone.querySelector('strong').textContent = count + ' archivo(s) seleccionados para referencia visual';
+                    }
+                });
+            }
+
+            form.addEventListener('submit', syncToCode);
+        })();
+    </script>
+    </body></html>
+    <?php
 }
 
 function renderDashboard(): void
@@ -259,7 +426,88 @@ function renderPosts(string $action, ?int $id): void
 
     if ($action === 'edit') {
         ?>
-        <section class="admin-panel"><h2><?= $post ? 'Editar nota' : 'Nueva nota' ?></h2><form class="admin-form" method="post"><?= Csrf::field() ?><input type="hidden" name="_form" value="post_save"><input type="hidden" name="id" value="<?= value($post, 'id') ?>"><div class="form-grid"><label class="form-full">Título<input name="title" value="<?= value($post, 'title') ?>" required></label><label>Slug<input name="slug" value="<?= value($post, 'slug') ?>" placeholder="se-genera-automaticamente"></label><label>Categoría<select name="category_id"><option value="">Sin categoría</option><?php foreach ($categories as $category): ?><option value="<?= (int) $category['id'] ?>" <?= ((string)($post['category_id'] ?? '') === (string)$category['id']) ? 'selected' : '' ?>><?= e($category['name']) ?></option><?php endforeach; ?></select></label><label>Estado<select name="status"><?php foreach (['draft' => 'Borrador', 'published' => 'Publicado', 'archived' => 'Archivado'] as $key => $label): ?><option value="<?= $key ?>" <?= (($post['status'] ?? 'draft') === $key) ? 'selected' : '' ?>><?= $label ?></option><?php endforeach; ?></select></label><label>Fecha de publicación<input type="datetime-local" name="published_at" value="<?= !empty($post['published_at']) ? e(date('Y-m-d\TH:i', strtotime($post['published_at']))) : '' ?>"></label><label class="form-full">Imagen destacada URL o ruta<input name="featured_image" value="<?= value($post, 'featured_image') ?>" placeholder="https://... o /assets/images/..."></label><label class="form-full">Extracto<textarea name="excerpt" rows="3"><?= value($post, 'excerpt') ?></textarea></label><label class="form-full">Contenido<textarea name="content" required><?= value($post, 'content') ?></textarea></label><label class="checkbox-row form-full"><input type="checkbox" name="is_featured" value="1" <?= !empty($post['is_featured']) ? 'checked' : '' ?>> Marcar como destacada</label></div><div class="admin-actions"><button>Guardar nota</button><a class="admin-button secondary" href="/admin/?section=posts">Cancelar</a></div></form></section>
+        <form class="admin-form post-editor-form" method="post"><?= Csrf::field() ?><input type="hidden" name="_form" value="post_save"><input type="hidden" name="id" value="<?= value($post, 'id') ?>"><input type="hidden" id="postStatus" name="status" value="<?= value($post, 'status', 'draft') ?>">
+            <div class="editor-page">
+                <section class="editor-main">
+                    <div class="editor-hero-card">
+                        <input class="editor-title" name="title" value="<?= value($post, 'title') ?>" required placeholder="Escribe un título" autocomplete="off">
+                        <input class="editor-subtitle" name="excerpt" value="<?= value($post, 'excerpt') ?>" placeholder="Add sub title here" autocomplete="off">
+                    </div>
+
+                    <div class="editor-hero-card">
+                        <div class="editor-action-row">
+                            <button type="button" class="admin-button editor-elementor">▣ Editar con Elementor</button>
+                            <button type="button" class="admin-button secondary" data-media-focus>＋ Añadir medios</button>
+                            <span class="editor-note">Estructura inspirada en WordPress/Gutenberg, adaptada al portal FEPA.</span>
+                        </div>
+                    </div>
+
+                    <div class="media-dropzone" id="mediaDropzone">
+                        <strong>Añadir medios</strong>
+                        Arrastra aquí imágenes o videos para previsualizarlos, o pega una URL/ruta en el panel de imagen destacada. La subida real de archivos puede conectarse después a cPanel File Manager o a una librería multimedia propia.
+                        <input type="file" id="mediaPicker" accept="image/*,video/*" multiple style="display:none">
+                    </div>
+
+                    <section class="editor-hero-card" style="padding:0">
+                        <div class="editor-tabs">
+                            <button type="button" class="active" data-editor-mode="visual">Visual</button>
+                            <button type="button" data-editor-mode="code">Código</button>
+                        </div>
+                        <div class="editor-toolbar" aria-label="Herramientas del editor">
+                            <select data-editor-block><option value="P">Párrafo</option><option value="H1">Encabezado H1</option><option value="H2">Encabezado H2</option><option value="H3">Encabezado H3</option><option value="H4">Encabezado H4</option><option value="H5">Encabezado H5</option><option value="H6">Encabezado H6</option></select>
+                            <select data-editor-font><option value="Arial">Arial</option><option value="Georgia">Georgia</option><option value="Verdana">Verdana</option><option value="Tahoma">Tahoma</option></select>
+                            <select data-editor-size><option value="3">Normal</option><option value="4">Mediana</option><option value="5">Grande</option><option value="6">Muy grande</option></select>
+                            <span class="toolbar-separator"></span>
+                            <button type="button" data-command="bold"><strong>B</strong></button><button type="button" data-command="italic"><em>I</em></button><button type="button" data-command="underline"><u>U</u></button><button type="button" data-command="strikeThrough"><s>S</s></button>
+                            <input type="color" value="#102a33" title="Color de texto" data-editor-color><input type="color" value="#fff7e5" title="Color de fondo" data-editor-bg>
+                            <span class="toolbar-separator"></span>
+                            <button type="button" data-command="insertUnorderedList">• Lista</button><button type="button" data-command="insertOrderedList">1. Lista</button>
+                            <button type="button" data-command="justifyLeft">Izq.</button><button type="button" data-command="justifyCenter">Centro</button><button type="button" data-command="justifyRight">Der.</button><button type="button" data-command="justifyFull">Just.</button>
+                            <span class="toolbar-separator"></span>
+                            <button type="button" data-command="formatBlock" data-value="BLOCKQUOTE">Cita</button><button type="button" data-link>Enlace</button><button type="button" data-command="insertHorizontalRule">Línea</button><button type="button" data-command="undo">↶</button><button type="button" data-command="redo">↷</button>
+                        </div>
+                        <div id="visualEditor" class="visual-editor" contenteditable="true" data-placeholder="Empieza a escribir el contenido de la nota..."></div>
+                        <textarea id="postContent" class="code-editor is-hidden" name="content" required><?= value($post, 'content') ?></textarea>
+                    </section>
+                </section>
+
+                <aside class="editor-sidebar">
+                    <details class="editor-sidebar-card" open><summary>Publicar</summary><div class="panel-body">
+                        <div class="publish-actions"><button type="submit" class="admin-button secondary" data-save-status="draft">Guardar borrador</button><a class="admin-button secondary" href="/" target="_blank" rel="noopener">Vista previa</a><button type="submit" class="admin-button publish-primary" data-save-status="published">Publicar / Actualizar</button></div>
+                        <label>Estado<select data-status-select><?php foreach (['draft' => 'Borrador', 'published' => 'Publicado', 'archived' => 'Archivado'] as $key => $label): ?><option value="<?= $key ?>" <?= (($post['status'] ?? 'draft') === $key) ? 'selected' : '' ?>><?= $label ?></option><?php endforeach; ?></select></label>
+                        <label>Visibilidad<select><option>Pública</option><option>Privada futura</option></select></label>
+                        <label>Fecha de publicación<input type="datetime-local" name="published_at" value="<?= !empty($post['published_at']) ? e(date('Y-m-d\TH:i', strtotime($post['published_at']))) : '' ?>"></label>
+                    </div></details>
+
+                    <details class="editor-sidebar-card" open><summary>Formato</summary><div class="panel-body format-options">
+                        <?php foreach (['standard' => 'Estándar', 'gallery' => 'Galería', 'video' => 'Video', 'audio' => 'Audio', 'link' => 'Enlace', 'quote' => 'Cita'] as $formatKey => $formatLabel): ?><label><input type="radio" name="content_format" value="<?= e($formatKey) ?>" <?= $formatKey === 'standard' ? 'checked' : '' ?>> <?= e($formatLabel) ?></label><?php endforeach; ?>
+                    </div></details>
+
+                    <details class="editor-sidebar-card" open><summary>Categorías</summary><div class="panel-body">
+                        <div class="editor-action-row"><span class="badge ok">Todas</span><span class="badge">Más utilizadas</span></div>
+                        <div class="category-checklist"><label><input type="radio" name="category_id" value="" <?= empty($post['category_id']) ? 'checked' : '' ?>> Sin categoría</label><?php foreach ($categories as $category): ?><label><input type="radio" name="category_id" value="<?= (int) $category['id'] ?>" <?= ((string)($post['category_id'] ?? '') === (string)$category['id']) ? 'checked' : '' ?>> <?= e($category['name']) ?></label><?php endforeach; ?></div>
+                        <a class="admin-button secondary" href="/admin/?section=categories&action=edit">＋ Añadir categoría</a>
+                    </div></details>
+
+                    <details class="editor-sidebar-card"><summary>Etiquetas</summary><div class="panel-body">
+                        <div class="tag-input-row"><input name="tags" placeholder="salud, mascotas, adopción"><button type="button" class="admin-button secondary">Añadir</button></div>
+                        <p class="editor-note">Las etiquetas quedan preparadas visualmente; si luego quieres buscador por tags, agregamos su tabla y relación.</p>
+                    </div></details>
+
+                    <details class="editor-sidebar-card" open><summary>Imagen destacada</summary><div class="panel-body">
+                        <div class="featured-preview" data-featured-preview><?php if (!empty($post['featured_image'])): ?><img src="<?= value($post, 'featured_image') ?>" alt="Vista previa"><span>Cambiar portada principal</span><?php else: ?><span>Sin imagen destacada</span><?php endif; ?></div>
+                        <label>URL o ruta de portada<input name="featured_image" value="<?= value($post, 'featured_image') ?>" placeholder="https://... o /assets/images/..."></label>
+                        <p class="editor-note">Esta imagen se usará en home, SEO, Open Graph, recomendados y miniaturas.</p>
+                    </div></details>
+
+                    <details class="editor-sidebar-card"><summary>Slug y destacado</summary><div class="panel-body">
+                        <label>Slug<input name="slug" value="<?= value($post, 'slug') ?>" placeholder="se-genera-automaticamente"></label>
+                        <label class="checkbox-row"><input type="checkbox" name="is_featured" value="1" <?= !empty($post['is_featured']) ? 'checked' : '' ?>> Marcar como destacada</label>
+                        <a class="admin-button secondary" href="/admin/?section=posts">Cancelar</a>
+                    </div></details>
+                </aside>
+            </div>
+        </form>
         <?php
         return;
     }
