@@ -36,6 +36,13 @@ function normalizeUtf8($value): string
         }
     }
 
+    if (str_contains($text, '├') || str_contains($text, '┬') || str_contains($text, '│')) {
+        $converted = @iconv('UTF-8', 'CP437//IGNORE', $text);
+        if ($converted !== false && preg_match('//u', $converted)) {
+            return $converted;
+        }
+    }
+
     return $text;
 }
 
