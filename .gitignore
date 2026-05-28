@@ -4,3 +4,15 @@ storage/uploads/*
 storage/cache/*
 !storage/cache/.gitkeep
 .DS_Store
+
+public/uploads/*
+!public/uploads/.gitkeep
+!public/uploads/.htaccess
+!public/uploads/media/
+!public/uploads/media/.gitkeep
+!public/uploads/posts/
+!public/uploads/posts/.gitkeep
+!public/uploads/banners/
+!public/uploads/banners/.gitkeep
+!public/uploads/logos/
+!public/uploads/logos/.gitkeep

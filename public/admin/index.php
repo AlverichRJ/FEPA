@@ -53,6 +53,148 @@ function value($source, string $key, string $default = ''): string
     return e($source[$key] ?? $default);
 }
 
+
+function adminUploadedFileEntries(string $field): array
+{
+    if (empty($_FILES[$field])) {
+        return [];
+    }
+
+    $files = $_FILES[$field];
+    $entries = [];
+
+    if (is_array($files['name'])) {
+        foreach ($files['name'] as $index => $name) {
+            $entries[] = [
+                'name' => $name,
+                'type' => $files['type'][$index] ?? '',
+                'tmp_name' => $files['tmp_name'][$index] ?? '',
+                'error' => $files['error'][$index] ?? UPLOAD_ERR_NO_FILE,
+                'size' => $files['size'][$index] ?? 0,
+            ];
+        }
+        return $entries;
+    }
+
+    return [$files];
+}
+
+function adminUploadDirectory(string $folder): array
+{
+    $folder = preg_replace('/[^a-z0-9_-]/i', '', $folder) ?: 'media';
+    $relativeMonth = date('Y/m');
+    $diskPath = BASE_PATH . '/public/uploads/' . $folder . '/' . $relativeMonth;
+    $publicPath = '/uploads/' . $folder . '/' . $relativeMonth;
+
+    if (!is_dir($diskPath) && !mkdir($diskPath, 0755, true) && !is_dir($diskPath)) {
+        throw new RuntimeException('No fue posible crear la carpeta de archivos multimedia.');
+    }
+
+    $securityFile = BASE_PATH . '/public/uploads/.htaccess';
+    if (!is_file($securityFile)) {
+        file_put_contents($securityFile, "Options -Indexes\n<FilesMatch \"\\.(php|phtml|phar|cgi|pl|py|sh)$\">\n    Require all denied\n</FilesMatch>\n");
+    }
+
+    return [$diskPath, $publicPath];
+}
+
+function adminSafeUploadName(string $originalName, string $extension): string
+{
+    $baseName = pathinfo($originalName, PATHINFO_FILENAME);
+    $baseName = normalizeUtf8($baseName);
+    $baseName = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $baseName) ?: 'archivo';
+    $baseName = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $baseName) ?? 'archivo');
+    $baseName = trim($baseName, '-') ?: 'archivo';
+
+    return $baseName . '-' . date('His') . '-' . bin2hex(random_bytes(4)) . '.' . $extension;
+}
+
+function adminSaveUploadedFiles(string $field, string $folder, array $allowedGroups = ['image', 'video']): array
+{
+    $allowed = [
+        'image' => [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            'image/gif' => 'gif',
+        ],
+        'video' => [
+            'video/mp4' => 'mp4',
+            'video/webm' => 'webm',
+            'video/ogg' => 'ogv',
+        ],
+    ];
+
+    $allowedMimes = [];
+    foreach ($allowedGroups as $group) {
+        $allowedMimes = array_merge($allowedMimes, $allowed[$group] ?? []);
+    }
+
+    $stored = [];
+    foreach (adminUploadedFileEntries($field) as $file) {
+        $error = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
+        if ($error === UPLOAD_ERR_NO_FILE) {
+            continue;
+        }
+        if ($error !== UPLOAD_ERR_OK) {
+            throw new RuntimeException('No fue posible subir uno de los archivos multimedia.');
+        }
+        if ((int) ($file['size'] ?? 0) > 20 * 1024 * 1024) {
+            throw new RuntimeException('Cada archivo multimedia debe pesar máximo 20 MB.');
+        }
+
+        $tmpName = (string) ($file['tmp_name'] ?? '');
+        if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+            throw new RuntimeException('El archivo multimedia recibido no es válido.');
+        }
+
+        $mime = mime_content_type($tmpName) ?: '';
+        if (!isset($allowedMimes[$mime])) {
+            throw new RuntimeException('Formato no permitido. Usa imágenes JPG, PNG, WEBP, GIF o videos MP4/WEBM.');
+        }
+
+        [$diskPath, $publicPath] = adminUploadDirectory($folder);
+        $filename = adminSafeUploadName((string) ($file['name'] ?? 'archivo'), $allowedMimes[$mime]);
+        $target = $diskPath . '/' . $filename;
+
+        if (!move_uploaded_file($tmpName, $target)) {
+            throw new RuntimeException('No fue posible guardar el archivo en la carpeta multimedia.');
+        }
+
+        $stored[] = [
+            'path' => $publicPath . '/' . $filename,
+            'mime' => $mime,
+            'name' => (string) ($file['name'] ?? $filename),
+        ];
+    }
+
+    return $stored;
+}
+
+function adminFirstUploadedFile(string $field, string $folder, array $allowedGroups = ['image']): ?array
+{
+    $files = adminSaveUploadedFiles($field, $folder, $allowedGroups);
+    return $files[0] ?? null;
+}
+
+function adminMediaHtml(array $files): string
+{
+    $html = '';
+    foreach ($files as $file) {
+        $path = e($file['path']);
+        $name = e(pathinfo((string) ($file['name'] ?? 'archivo'), PATHINFO_FILENAME));
+        $mime = (string) ($file['mime'] ?? '');
+
+        if (str_starts_with($mime, 'image/')) {
+            $html .= '<figure><img src="' . $path . '" alt="' . $name . '" loading="lazy"></figure>';
+        } elseif (str_starts_with($mime, 'video/')) {
+            $html .= '<figure><video controls src="' . $path . '"></video></figure>';
+        }
+    }
+
+    return $html;
+}
+
 try {
     $hasUsers = Auth::hasUsers();
 } catch (Throwable $exception) {
@@ -108,8 +250,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         requireCsrf();
 
         if ($form === 'post_save') {
-            AdminContent::savePost($_POST, (int) $user['id']);
-            flash('La nota se guardó correctamente.');
+            $postData = $_POST;
+            $featuredUpload = adminFirstUploadedFile('featured_image_file', 'posts', ['image']);
+            if ($featuredUpload) {
+                $postData['featured_image'] = $featuredUpload['path'];
+            }
+
+            $mediaUploads = adminSaveUploadedFiles('post_media_files', 'media', ['image', 'video']);
+            if ($mediaUploads) {
+                $postData['content'] = trim((string) ($postData['content'] ?? '')) . adminMediaHtml($mediaUploads);
+                if (empty($postData['featured_image'])) {
+                    foreach ($mediaUploads as $mediaUpload) {
+                        if (str_starts_with((string) $mediaUpload['mime'], 'image/')) {
+                            $postData['featured_image'] = $mediaUpload['path'];
+                            break;
+                        }
+                    }
+                }
+            }
+
+            AdminContent::savePost($postData, (int) $user['id']);
+            flash('La nota se guardó correctamente. Los archivos multimedia se guardan en /public/uploads/.');
             adminRedirect('posts');
         }
 
@@ -132,7 +293,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($form === 'banner_save') {
-            AdminContent::saveBanner($_POST);
+            $bannerData = $_POST;
+            $bannerUpload = adminFirstUploadedFile('banner_image_file', 'banners', ['image']);
+            if ($bannerUpload) {
+                $bannerData['image_path'] = $bannerUpload['path'];
+            }
+
+            AdminContent::saveBanner($bannerData);
             flash('El banner se guardó correctamente.');
             adminRedirect('banners');
         }
@@ -145,6 +312,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($form === 'site_logo_save') {
             $logoPath = trim((string) ($_POST['site_logo'] ?? ''));
+            $logoUpload = adminFirstUploadedFile('site_logo_file', 'logos', ['image']);
+            if ($logoUpload) {
+                $logoPath = $logoUpload['path'];
+            }
             if ($logoPath !== '' && !str_starts_with($logoPath, '/') && !filter_var($logoPath, FILTER_VALIDATE_URL)) {
                 throw new InvalidArgumentException('La ruta del logo debe iniciar con / o ser una URL completa https://.');
             }
@@ -404,10 +575,9 @@ function renderShellEnd(): void
                 mediaPicker.addEventListener('change', () => {
                     const count = mediaPicker.files ? mediaPicker.files.length : 0;
                     if (count) {
-                        const storagePath = window.prompt('¿Dónde se van a alojar estos archivos multimedia? Ejemplo: /assets/uploads/ o una URL CDN https://...', '/assets/uploads/');
-                        mediaDropzone.querySelector('strong').textContent = count + ' archivo(s) seleccionados para referencia visual';
+                        mediaDropzone.querySelector('strong').textContent = count + ' archivo(s) listo(s) para subir';
                         if (mediaStorageNotice) {
-                            mediaStorageNotice.textContent = storagePath ? 'Alojamiento indicado: ' + storagePath : 'No se indicó alojamiento. Sube los archivos a cPanel y usa su ruta pública en la nota.';
+                            mediaStorageNotice.textContent = 'Se guardarán automáticamente en /public/uploads/media/ al guardar la nota.';
                         }
                     }
                 });
@@ -465,7 +635,7 @@ function renderPosts(string $action, ?int $id): void
 
     if ($action === 'edit') {
         ?>
-        <form class="admin-form post-editor-form" method="post"><?= Csrf::field() ?><input type="hidden" name="_form" value="post_save"><input type="hidden" name="id" value="<?= value($post, 'id') ?>"><input type="hidden" id="postStatus" name="status" value="<?= value($post, 'status', 'draft') ?>">
+        <form class="admin-form post-editor-form" method="post" enctype="multipart/form-data"><?= Csrf::field() ?><input type="hidden" name="_form" value="post_save"><input type="hidden" name="id" value="<?= value($post, 'id') ?>"><input type="hidden" id="postStatus" name="status" value="<?= value($post, 'status', 'draft') ?>">
             <div class="editor-page">
                 <section class="editor-main">
                     <div class="editor-hero-card">
@@ -481,9 +651,9 @@ function renderPosts(string $action, ?int $id): void
 
                     <div class="media-dropzone" id="mediaDropzone">
                         <strong>Añadir medios</strong>
-                        <span>Antes de usar imágenes o videos en una nota, indica dónde se van a alojar. Recomendado para cPanel: <code>/public/assets/uploads/</code>; en el editor se usa la ruta pública, por ejemplo <code>/assets/uploads/mi-imagen.jpg</code>. Si usas CDN externo, pega la URL completa <code>https://...</code>.</span>
-                        <p class="editor-note" id="mediaStorageNotice">Al seleccionar archivos, el panel te preguntará la ubicación de alojamiento.</p>
-                        <input type="file" id="mediaPicker" accept="image/*,video/*" multiple style="display:none">
+                        <span>Las imágenes y videos seleccionados se guardarán automáticamente en <code>/public/uploads/media/</code>. En la nota se usará la ruta pública <code>/uploads/media/...</code>, compatible con cPanel.</span>
+                        <p class="editor-note" id="mediaStorageNotice">Al guardar la nota, los archivos seleccionados se subirán y se insertarán al final del contenido.</p>
+                        <input type="file" id="mediaPicker" name="post_media_files[]" accept="image/*,video/*" multiple style="display:none">
                     </div>
 
                     <section class="editor-box">
@@ -535,8 +705,9 @@ function renderPosts(string $action, ?int $id): void
 
                     <details class="editor-sidebar-card" open><summary>Imagen destacada</summary><div class="panel-body">
                         <div class="featured-preview" data-featured-preview><?php if (!empty($post['featured_image'])): ?><img src="<?= value($post, 'featured_image') ?>" alt="Vista previa"><span>Cambiar portada principal</span><?php else: ?><span>Sin imagen destacada</span><?php endif; ?></div>
-                        <label>URL o ruta de portada<input name="featured_image" value="<?= value($post, 'featured_image') ?>" placeholder="https://... o /assets/images/..."></label>
-                        <p class="editor-note">Esta imagen se usará en home, SEO, Open Graph, recomendados y miniaturas.</p>
+                        <label>Subir portada desde tu computadora<input type="file" name="featured_image_file" accept="image/*"></label>
+                        <label>URL o ruta de portada<input name="featured_image" value="<?= value($post, 'featured_image') ?>" placeholder="https://... o /uploads/posts/..."></label>
+                        <p class="editor-note">Si subes una portada, se guardará en <code>/public/uploads/posts/</code> y se usará en home, SEO, Open Graph, recomendados y miniaturas.</p>
                     </div></details>
 
                     <details class="editor-sidebar-card"><summary>Slug y destacado</summary><div class="panel-body">
@@ -586,15 +757,18 @@ function renderSettings(): void
             </div>
             <a class="admin-button secondary" href="/" target="_blank" rel="noopener">Ver home</a>
         </div>
-        <form class="admin-form" method="post">
+        <form class="admin-form" method="post" enctype="multipart/form-data">
             <?= Csrf::field() ?>
             <input type="hidden" name="_form" value="site_logo_save">
             <div class="form-grid">
+                <label class="form-full">Subir logo desde tu computadora
+                    <input type="file" name="site_logo_file" accept="image/*">
+                </label>
                 <label class="form-full">Ruta o URL del logo
-                    <input name="site_logo" value="<?= e($siteLogo) ?>" placeholder="/assets/uploads/logo-fepa.png o https://...">
+                    <input name="site_logo" value="<?= e($siteLogo) ?>" placeholder="/uploads/logos/logo-fepa.png o https://...">
                 </label>
             </div>
-            <p class="admin-help">Aloja primero el archivo en tu cPanel, idealmente en <strong>/public/assets/uploads/</strong>, y coloca aquí la ruta pública como <strong>/assets/uploads/logo-fepa.png</strong>. Si dejas este campo vacío, el sitio mostrará la marca actual con el ícono de huella.</p>
+            <p class="admin-help">Ahora puedes subir el logo directamente desde este panel. Se guardará en <strong>/public/uploads/logos/</strong> y el sitio usará la ruta pública <strong>/uploads/logos/...</strong>. También puedes seguir pegando una URL externa si lo prefieres.</p>
             <div class="admin-actions"><button>Actualizar logo</button><a class="admin-button secondary" href="/admin/">Cancelar</a></div>
         </form>
     </section>
@@ -607,7 +781,7 @@ function renderBanners(string $action, ?int $id): void
     $placements = ['top_728x90' => 'Superior 728x90', 'sidebar_top_300x250' => 'Sidebar superior 300x250', 'sidebar_bottom_300x250' => 'Sidebar inferior 300x250'];
     if ($action === 'edit') {
         ?>
-        <section class="admin-panel"><h2><?= $banner ? 'Editar banner' : 'Nuevo banner' ?></h2><form class="admin-form" method="post"><?= Csrf::field() ?><input type="hidden" name="_form" value="banner_save"><input type="hidden" name="id" value="<?= value($banner, 'id') ?>"><div class="form-grid"><label>Nombre<input name="name" value="<?= value($banner, 'name') ?>" required></label><label>Ubicación<select name="placement"><?php foreach ($placements as $key => $label): ?><option value="<?= e($key) ?>" <?= (($banner['placement'] ?? '') === $key) ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select></label><label>Tipo<select name="type"><?php foreach (['image' => 'Imagen', 'html' => 'HTML', 'adsense' => 'AdSense'] as $key => $label): ?><option value="<?= $key ?>" <?= (($banner['type'] ?? 'image') === $key) ? 'selected' : '' ?>><?= $label ?></option><?php endforeach; ?></select></label><label>URL destino<input name="target_url" value="<?= value($banner, 'target_url') ?>" placeholder="https://..."></label><label class="form-full">Ruta o URL de imagen<input name="image_path" value="<?= value($banner, 'image_path') ?>" placeholder="/assets/images/banner.jpg o https://..."></label><label>Inicio de vigencia<input type="datetime-local" name="starts_at" value="<?= !empty($banner['starts_at']) ? e(date('Y-m-d\TH:i', strtotime($banner['starts_at']))) : '' ?>"></label><label>Fin de vigencia<input type="datetime-local" name="ends_at" value="<?= !empty($banner['ends_at']) ? e(date('Y-m-d\TH:i', strtotime($banner['ends_at']))) : '' ?>"></label><label class="form-full">Código HTML o AdSense<textarea name="html_code" rows="5"><?= value($banner, 'html_code') ?></textarea></label><label class="checkbox-row form-full"><input type="checkbox" name="is_active" value="1" <?= !isset($banner['is_active']) || !empty($banner['is_active']) ? 'checked' : '' ?>> Banner activo</label></div><div class="admin-actions"><button>Guardar banner</button><a class="admin-button secondary" href="/admin/?section=banners">Cancelar</a></div></form><p class="admin-help">El front público ya consume estas ubicaciones: <strong>top_728x90</strong>, <strong>sidebar_top_300x250</strong> y <strong>sidebar_bottom_300x250</strong>.</p></section>
+        <section class="admin-panel"><h2><?= $banner ? 'Editar banner' : 'Nuevo banner' ?></h2><form class="admin-form" method="post" enctype="multipart/form-data"><?= Csrf::field() ?><input type="hidden" name="_form" value="banner_save"><input type="hidden" name="id" value="<?= value($banner, 'id') ?>"><div class="form-grid"><label>Nombre<input name="name" value="<?= value($banner, 'name') ?>" required></label><label>Ubicación<select name="placement"><?php foreach ($placements as $key => $label): ?><option value="<?= e($key) ?>" <?= (($banner['placement'] ?? '') === $key) ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select></label><label>Tipo<select name="type"><?php foreach (['image' => 'Imagen', 'html' => 'HTML', 'adsense' => 'AdSense'] as $key => $label): ?><option value="<?= $key ?>" <?= (($banner['type'] ?? 'image') === $key) ? 'selected' : '' ?>><?= $label ?></option><?php endforeach; ?></select></label><label>URL destino<input name="target_url" value="<?= value($banner, 'target_url') ?>" placeholder="https://..."></label><label class="form-full">Subir imagen de banner<input type="file" name="banner_image_file" accept="image/*"></label><label class="form-full">Ruta o URL de imagen<input name="image_path" value="<?= value($banner, 'image_path') ?>" placeholder="/uploads/banners/banner.jpg o https://..."></label><label>Inicio de vigencia<input type="datetime-local" name="starts_at" value="<?= !empty($banner['starts_at']) ? e(date('Y-m-d\TH:i', strtotime($banner['starts_at']))) : '' ?>"></label><label>Fin de vigencia<input type="datetime-local" name="ends_at" value="<?= !empty($banner['ends_at']) ? e(date('Y-m-d\TH:i', strtotime($banner['ends_at']))) : '' ?>"></label><label class="form-full">Código HTML o AdSense<textarea name="html_code" rows="5"><?= value($banner, 'html_code') ?></textarea></label><label class="checkbox-row form-full"><input type="checkbox" name="is_active" value="1" <?= !isset($banner['is_active']) || !empty($banner['is_active']) ? 'checked' : '' ?>> Banner activo</label></div><div class="admin-actions"><button>Guardar banner</button><a class="admin-button secondary" href="/admin/?section=banners">Cancelar</a></div></form><p class="admin-help">El front público ya consume estas ubicaciones: <strong>top_728x90</strong>, <strong>sidebar_top_300x250</strong> y <strong>sidebar_bottom_300x250</strong>.</p></section>
         <?php
         return;
     }
