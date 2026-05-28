@@ -21,9 +21,27 @@ spl_autoload_register(static function (string $class): void {
     }
 });
 
+function normalizeUtf8($value): string
+{
+    $text = (string) $value;
+
+    if ($text === '') {
+        return '';
+    }
+
+    if (!preg_match('//u', $text)) {
+        $converted = @iconv('Windows-1252', 'UTF-8//IGNORE', $text);
+        if ($converted !== false) {
+            return $converted;
+        }
+    }
+
+    return $text;
+}
+
 function e($value): string
 {
-    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+    return htmlspecialchars(normalizeUtf8($value), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
 function asset(string $path): string
