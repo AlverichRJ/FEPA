@@ -12,12 +12,12 @@ final class Post
     public static function latest(int $limit = 6, int $offset = 0): array
     {
         $statement = Database::connection()->prepare(self::baseQuery() . '
-            WHERE p.status = :status AND p.published_at IS NOT NULL AND p.published_at <= NOW()
+            WHERE ' . self::publishedCondition() . '
             GROUP BY p.id
             ORDER BY p.published_at DESC, p.id DESC
             LIMIT :limit OFFSET :offset'
         );
-        $statement->bindValue('status', 'published');
+        self::bindPublishedCondition($statement);
         $statement->bindValue('limit', $limit, PDO::PARAM_INT);
         $statement->bindValue('offset', $offset, PDO::PARAM_INT);
         $statement->execute();
@@ -28,12 +28,13 @@ final class Post
     public static function featured(): ?array
     {
         $statement = Database::connection()->prepare(self::baseQuery() . '
-            WHERE p.status = :status AND p.published_at IS NOT NULL AND p.published_at <= NOW()
+            WHERE ' . self::publishedCondition() . '
             GROUP BY p.id
             ORDER BY p.is_featured DESC, p.published_at DESC, p.id DESC
             LIMIT 1'
         );
-        $statement->execute(['status' => 'published']);
+        self::bindPublishedCondition($statement);
+        $statement->execute();
         $post = $statement->fetch();
 
         return $post ? self::normalize($post) : null;
@@ -42,14 +43,13 @@ final class Post
     public static function findBySlug(string $slug): ?array
     {
         $statement = Database::connection()->prepare(self::baseQuery() . '
-            WHERE p.slug = :slug AND p.status = :status AND p.published_at IS NOT NULL AND p.published_at <= NOW()
+            WHERE p.slug = :slug AND ' . self::publishedCondition() . '
             GROUP BY p.id
             LIMIT 1'
         );
-        $statement->execute([
-            'slug' => $slug,
-            'status' => 'published',
-        ]);
+        $statement->bindValue('slug', $slug);
+        self::bindPublishedCondition($statement);
+        $statement->execute();
         $post = $statement->fetch();
 
         return $post ? self::normalize($post) : null;
@@ -58,13 +58,13 @@ final class Post
     public static function byCategory(int $categoryId, int $limit = 6, int $offset = 0): array
     {
         $statement = Database::connection()->prepare(self::baseQuery() . '
-            WHERE p.category_id = :category_id AND p.status = :status AND p.published_at IS NOT NULL AND p.published_at <= NOW()
+            WHERE p.category_id = :category_id AND ' . self::publishedCondition() . '
             GROUP BY p.id
             ORDER BY p.published_at DESC, p.id DESC
             LIMIT :limit OFFSET :offset'
         );
         $statement->bindValue('category_id', $categoryId, PDO::PARAM_INT);
-        $statement->bindValue('status', 'published');
+        self::bindPublishedCondition($statement);
         $statement->bindValue('limit', $limit, PDO::PARAM_INT);
         $statement->bindValue('offset', $offset, PDO::PARAM_INT);
         $statement->execute();
@@ -75,12 +75,12 @@ final class Post
     public static function popular(int $limit = 3): array
     {
         $statement = Database::connection()->prepare(self::baseQuery() . '
-            WHERE p.status = :status AND p.published_at IS NOT NULL AND p.published_at <= NOW()
+            WHERE ' . self::publishedCondition() . '
             GROUP BY p.id
             ORDER BY p.views DESC, p.published_at DESC
             LIMIT :limit'
         );
-        $statement->bindValue('status', 'published');
+        self::bindPublishedCondition($statement);
         $statement->bindValue('limit', $limit, PDO::PARAM_INT);
         $statement->execute();
 
@@ -90,12 +90,12 @@ final class Post
     public static function viral(int $limit = 3): array
     {
         $statement = Database::connection()->prepare(self::baseQuery() . '
-            WHERE p.status = :status AND p.published_at IS NOT NULL AND p.published_at <= NOW()
+            WHERE ' . self::publishedCondition() . '
             GROUP BY p.id
             ORDER BY (p.views + (CASE WHEN p.is_featured = 1 THEN 100 ELSE 0 END)) DESC, p.updated_at DESC
             LIMIT :limit'
         );
-        $statement->bindValue('status', 'published');
+        self::bindPublishedCondition($statement);
         $statement->bindValue('limit', $limit, PDO::PARAM_INT);
         $statement->execute();
 
@@ -106,9 +106,7 @@ final class Post
     {
         $sql = self::baseQuery() . '
             WHERE p.id <> :post_id
-              AND p.status = :status
-              AND p.published_at IS NOT NULL
-              AND p.published_at <= NOW()';
+              AND ' . self::publishedCondition();
 
         if ($categoryId !== null) {
             $sql .= ' AND p.category_id = :category_id';
@@ -121,7 +119,7 @@ final class Post
 
         $statement = Database::connection()->prepare($sql);
         $statement->bindValue('post_id', $postId, PDO::PARAM_INT);
-        $statement->bindValue('status', 'published');
+        self::bindPublishedCondition($statement);
         if ($categoryId !== null) {
             $statement->bindValue('category_id', $categoryId, PDO::PARAM_INT);
         }
@@ -135,6 +133,17 @@ final class Post
     {
         $statement = Database::connection()->prepare('UPDATE posts SET views = views + 1 WHERE id = :id');
         $statement->execute(['id' => $postId]);
+    }
+
+    private static function publishedCondition(): string
+    {
+        return 'p.status = :status AND (p.published_at IS NULL OR p.published_at <= :published_now)';
+    }
+
+    private static function bindPublishedCondition($statement): void
+    {
+        $statement->bindValue('status', 'published');
+        $statement->bindValue('published_now', date('Y-m-d H:i:s'));
     }
 
     private static function baseQuery(): string
