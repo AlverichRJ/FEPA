@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../app/bootstrap.php';
 
+use App\Models\AdminContent;
 use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Post;
@@ -29,6 +30,7 @@ $related = [];
 $topBanner = null;
 $sidebarTopBanner = null;
 $sidebarBottomBanner = null;
+$siteLogo = '';
 $databaseError = null;
 
 try {
@@ -38,6 +40,7 @@ try {
     $topBanner = Banner::activeByPlacement('top_728x90');
     $sidebarTopBanner = Banner::activeByPlacement('sidebar_top_300x250');
     $sidebarBottomBanner = Banner::activeByPlacement('sidebar_bottom_300x250');
+    $siteLogo = AdminContent::setting('site_logo', '');
 
     if ($isArticle && $slug) {
         $current = Post::findBySlug($slug);
@@ -65,6 +68,19 @@ try {
     http_response_code(500);
     $databaseError = $exception->getMessage();
     error_log($exception->getMessage());
+}
+
+
+function renderBrand(array $app, string $siteLogo): string
+{
+    $mark = $siteLogo !== ''
+        ? '<img class="brand-logo" src="' . e($siteLogo) . '" alt="' . e($app['app_name']) . '">'
+        : '<span class="brand-mark">🐾</span>';
+
+    return '<a class="brand" href="/" aria-label="Inicio FEPA Veterinaria">'
+        . $mark
+        . '<span><strong>' . e($app['app_name']) . '</strong><small>' . e($app['tagline']) . '</small></span>'
+        . '</a>';
 }
 
 function renderBanner(?array $banner, string $fallback): string
@@ -136,13 +152,10 @@ $canonicalUrl = rtrim($app['base_url'] ?: '', '/') . ($_SERVER['REQUEST_URI'] ??
     <link rel="stylesheet" href="<?= asset('css/styles.css') ?>">
 </head>
 <body>
-    <div class="top-ad"><?= renderBanner($topBanner, 'PUBLICIDAD 728 x 90') ?></div>
+    <div class="top-ad"><?= renderBanner($topBanner, '') ?></div>
     <header class="site-header">
         <div class="container nav-shell">
-            <a class="brand" href="/" aria-label="Inicio FEPA Veterinaria">
-                <span class="brand-mark">🐾</span>
-                <span><strong><?= e($app['app_name']) ?></strong><small><?= e($app['tagline']) ?></small></span>
-            </a>
+            <?= renderBrand($app, $siteLogo) ?>
             <nav class="main-nav" aria-label="Menú principal">
                 <a class="<?= $route === 'inicio' ? 'active' : '' ?>" href="/">Inicio</a>
                 <?php foreach ($categories as $category): ?>
@@ -176,7 +189,7 @@ $canonicalUrl = rtrim($app['base_url'] ?: '', '/') . ($_SERVER['REQUEST_URI'] ??
                     <div class="share-row"><a href="#">Facebook</a><a href="#">Twitter</a><a href="#">Compartir</a></div>
                     <img class="article-cover" src="<?= e($current['image']) ?>" alt="<?= e($current['title']) ?>" loading="lazy">
                     <?= renderArticleContent($current['content']) ?>
-                    <div class="inline-ad">PUBLICIDAD</div>
+                    <div class="inline-ad"></div>
                     <?php if (!empty($current['tags'])): ?><div class="tag-list"><?php foreach ($current['tags'] as $tag): ?><span><?= e($tag) ?></span><?php endforeach; ?></div><?php endif; ?>
                     <?php if ($related): ?><section class="related-section"><h2>Artículos relacionados</h2><div class="related-grid"><?php foreach ($related as $article): ?><a class="related-card" href="<?= articleUrl($article['slug']) ?>"><img src="<?= e($article['image']) ?>" alt="" loading="lazy"><strong><?= e($article['title']) ?></strong></a><?php endforeach; ?></div></section><?php endif; ?>
                 </article>
@@ -216,7 +229,7 @@ $canonicalUrl = rtrim($app['base_url'] ?: '', '/') . ($_SERVER['REQUEST_URI'] ??
         </main>
     <?php endif; ?>
 
-    <footer class="site-footer"><div class="container footer-shell"><a class="brand" href="/"><span class="brand-mark">🐾</span><span><strong><?= e($app['app_name']) ?></strong><small><?= e($app['tagline']) ?></small></span></a><div class="footer-social">f · ig · ▶</div><div><a href="/aviso-de-privacidad">Aviso de privacidad</a><small>© <?= date('Y') ?> FEPA Veterinaria. Todos los derechos reservados.</small></div></div></footer>
+    <footer class="site-footer"><div class="container footer-shell"><?= renderBrand($app, $siteLogo) ?><div class="footer-social">f · ig · ▶</div><div><a href="/aviso-de-privacidad">Aviso de privacidad</a><small>© <?= date('Y') ?> FEPA Veterinaria. Todos los derechos reservados.</small></div></div></footer>
     <script src="<?= asset('js/site.js') ?>" defer></script>
 </body>
 </html>

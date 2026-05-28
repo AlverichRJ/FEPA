@@ -1,5 +1,5 @@
 <aside class="sidebar">
-    <div class="ad-box"><?= renderBanner($sidebarTopBanner ?? null, 'PUBLICIDAD<br>300 x 250') ?></div>
+    <div class="ad-box"><?= renderBanner($sidebarTopBanner ?? null, '') ?></div>
 
     <section class="side-block">
         <h3>★ Notas populares</h3>
@@ -23,5 +23,5 @@
         <?php endif; ?>
     </section>
 
-    <div class="ad-box"><?= renderBanner($sidebarBottomBanner ?? null, 'PUBLICIDAD<br>300 x 250') ?></div>
+    <div class="ad-box"><?= renderBanner($sidebarBottomBanner ?? null, '') ?></div>
 </aside>

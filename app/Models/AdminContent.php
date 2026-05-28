@@ -228,6 +228,40 @@ final class AdminContent
         $statement->execute(['id' => $id]);
     }
 
+
+    public static function settings(): array
+    {
+        $statement = Database::connection()->query('SELECT setting_key, setting_value FROM settings');
+        $settings = [];
+
+        foreach ($statement->fetchAll() as $row) {
+            $settings[$row['setting_key']] = $row['setting_value'];
+        }
+
+        return $settings;
+    }
+
+    public static function setting(string $key, string $default = ''): string
+    {
+        $statement = Database::connection()->prepare('SELECT setting_value FROM settings WHERE setting_key = :key LIMIT 1');
+        $statement->execute(['key' => $key]);
+        $value = $statement->fetchColumn();
+
+        return $value === false || $value === null ? $default : (string) $value;
+    }
+
+    public static function saveSetting(string $key, ?string $value): void
+    {
+        $statement = Database::connection()->prepare(
+            'INSERT INTO settings (setting_key, setting_value) VALUES (:setting_key, :setting_value)
+             ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)'
+        );
+        $statement->execute([
+            'setting_key' => $key,
+            'setting_value' => self::nullableString($value),
+        ]);
+    }
+
     private static function uniqueSlug(string $table, string $slug, ?int $ignoreId = null): string
     {
         $slug = $slug ?: 'item';

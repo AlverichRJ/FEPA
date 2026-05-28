@@ -142,6 +142,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('El banner fue eliminado.');
             adminRedirect('banners');
         }
+
+        if ($form === 'site_logo_save') {
+            $logoPath = trim((string) ($_POST['site_logo'] ?? ''));
+            if ($logoPath !== '' && !str_starts_with($logoPath, '/') && !filter_var($logoPath, FILTER_VALIDATE_URL)) {
+                throw new InvalidArgumentException('La ruta del logo debe iniciar con / o ser una URL completa https://.');
+            }
+            AdminContent::saveSetting('site_logo', $logoPath);
+            flash('El logo del sitio se actualizó correctamente.');
+            adminRedirect('settings');
+        }
     } catch (Throwable $exception) {
         flash($exception->getMessage(), 'error');
         adminRedirect($section, $action, $id);
@@ -223,6 +233,7 @@ function renderShellStart(string $section, array $user, ?string $notice, ?string
                 <a class="<?= activeNav($section, 'posts') ?>" href="/admin/?section=posts">Notas</a>
                 <a class="<?= activeNav($section, 'categories') ?>" href="/admin/?section=categories">Categorías</a>
                 <a class="<?= activeNav($section, 'banners') ?>" href="/admin/?section=banners">Banners</a>
+                <a class="<?= activeNav($section, 'settings') ?>" href="/admin/?section=settings">Logo</a>
                 <a href="/" target="_blank" rel="noopener">Ver sitio</a>
             </nav>
         </aside>
@@ -255,6 +266,7 @@ function renderShellEnd(): void
             const mediaButton = document.querySelector('[data-media-focus]');
             const mediaPicker = document.getElementById('mediaPicker');
             const mediaDropzone = document.getElementById('mediaDropzone');
+            const mediaStorageNotice = document.getElementById('mediaStorageNotice');
             let currentMode = 'visual';
 
             function syncToVisual() {
@@ -392,7 +404,11 @@ function renderShellEnd(): void
                 mediaPicker.addEventListener('change', () => {
                     const count = mediaPicker.files ? mediaPicker.files.length : 0;
                     if (count) {
+                        const storagePath = window.prompt('¿Dónde se van a alojar estos archivos multimedia? Ejemplo: /assets/uploads/ o una URL CDN https://...', '/assets/uploads/');
                         mediaDropzone.querySelector('strong').textContent = count + ' archivo(s) seleccionados para referencia visual';
+                        if (mediaStorageNotice) {
+                            mediaStorageNotice.textContent = storagePath ? 'Alojamiento indicado: ' + storagePath : 'No se indicó alojamiento. Sube los archivos a cPanel y usa su ruta pública en la nota.';
+                        }
                     }
                 });
             }
@@ -431,7 +447,7 @@ function renderDashboard(): void
         <div class="stat-card"><strong><?= $stats['categories'] ?></strong><span>Categorías</span></div>
         <div class="stat-card"><strong><?= $stats['banners'] ?></strong><span>Banners</span></div>
     </section>
-    <section class="admin-panel"><h2>Acciones rápidas</h2><p>Desde aquí puedes crear contenido editorial, ordenar categorías y configurar espacios publicitarios sin editar código.</p><div class="admin-actions"><a class="admin-button" href="/admin/?section=posts&action=edit">Nueva nota</a><a class="admin-button secondary" href="/admin/?section=categories&action=edit">Nueva categoría</a><a class="admin-button secondary" href="/admin/?section=banners&action=edit">Nuevo banner</a></div></section>
+    <section class="admin-panel"><h2>Acciones rápidas</h2><p>Desde aquí puedes crear contenido editorial, ordenar categorías, actualizar el logo y configurar espacios publicitarios sin editar código.</p><div class="admin-actions"><a class="admin-button" href="/admin/?section=posts&action=edit">Nueva nota</a><a class="admin-button secondary" href="/admin/?section=categories&action=edit">Nueva categoría</a><a class="admin-button secondary" href="/admin/?section=banners&action=edit">Nuevo banner</a><a class="admin-button secondary" href="/admin/?section=settings">Actualizar logo</a></div></section>
     <?php
 }
 
@@ -465,7 +481,8 @@ function renderPosts(string $action, ?int $id): void
 
                     <div class="media-dropzone" id="mediaDropzone">
                         <strong>Añadir medios</strong>
-                        Arrastra aquí imágenes o videos para previsualizarlos, o pega una URL/ruta en el panel de imagen destacada. La subida real de archivos puede conectarse después a cPanel File Manager o a una librería multimedia propia.
+                        <span>Antes de usar imágenes o videos en una nota, indica dónde se van a alojar. Recomendado para cPanel: <code>/public/assets/uploads/</code>; en el editor se usa la ruta pública, por ejemplo <code>/assets/uploads/mi-imagen.jpg</code>. Si usas CDN externo, pega la URL completa <code>https://...</code>.</span>
+                        <p class="editor-note" id="mediaStorageNotice">Al seleccionar archivos, el panel te preguntará la ubicación de alojamiento.</p>
                         <input type="file" id="mediaPicker" accept="image/*,video/*" multiple style="display:none">
                     </div>
 
@@ -555,6 +572,35 @@ function renderCategories(string $action, ?int $id): void
     <?php
 }
 
+
+function renderSettings(): void
+{
+    $settings = AdminContent::settings();
+    $siteLogo = (string) ($settings['site_logo'] ?? '');
+    ?>
+    <section class="admin-panel">
+        <div class="admin-topbar" style="margin-bottom:16px">
+            <div>
+                <h2>Logo del sitio</h2>
+                <p>Actualiza la imagen que aparece en el encabezado y el pie de página.</p>
+            </div>
+            <a class="admin-button secondary" href="/" target="_blank" rel="noopener">Ver home</a>
+        </div>
+        <form class="admin-form" method="post">
+            <?= Csrf::field() ?>
+            <input type="hidden" name="_form" value="site_logo_save">
+            <div class="form-grid">
+                <label class="form-full">Ruta o URL del logo
+                    <input name="site_logo" value="<?= e($siteLogo) ?>" placeholder="/assets/uploads/logo-fepa.png o https://...">
+                </label>
+            </div>
+            <p class="admin-help">Aloja primero el archivo en tu cPanel, idealmente en <strong>/public/assets/uploads/</strong>, y coloca aquí la ruta pública como <strong>/assets/uploads/logo-fepa.png</strong>. Si dejas este campo vacío, el sitio mostrará la marca actual con el ícono de huella.</p>
+            <div class="admin-actions"><button>Actualizar logo</button><a class="admin-button secondary" href="/admin/">Cancelar</a></div>
+        </form>
+    </section>
+    <?php
+}
+
 function renderBanners(string $action, ?int $id): void
 {
     $banner = $action === 'edit' ? (AdminContent::banner($id) ?? []) : [];
@@ -584,6 +630,8 @@ try {
         renderCategories($action, $id);
     } elseif ($section === 'banners') {
         renderBanners($action, $id);
+    } elseif ($section === 'settings') {
+        renderSettings();
     } else {
         renderDashboard();
     }
